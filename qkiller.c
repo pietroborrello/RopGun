@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h> /* for pid_t */
+#include <sys/wait.h>  /* for wait */
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 
@@ -31,22 +33,35 @@ int main(int argc, char **argv)
     pe.exclude_kernel = 1;
     pe.exclude_hv = 1;
 
-    fd = perf_event_open(&pe, 0, -1, -1, 0);
+    fd = perf_event_open(&pe, 0, -1, -1, PERF_FLAG_FD_CLOEXEC);
     if (fd == -1)
     {
         fprintf(stderr, "Error opening leader %llx\n", pe.config);
         exit(EXIT_FAILURE);
     }
 
-    ioctl(fd, PERF_EVENT_IOC_RESET, 0);
-    ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+    /*Spawn a child to run the program.*/
+    pid_t pid = fork();
+    if (pid == 0)
+    { /* child process */
+        static char *argv[] = {"echo", "aaa", NULL};
 
-    printf("Measuring instruction count for this printf\n");
+        ioctl(fd, PERF_EVENT_IOC_RESET, 0);
+        ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+        
+        execv("/bin/echo", argv);
+        exit(127); /* only if execv fails */
+    }
+    else
+    { /* pid!=0; parent process */
+        waitpid(pid, 0, 0); /* wait for child to exit */
 
-    ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
-    read(fd, &count, sizeof(long long));
+        ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
+        read(fd, &count, sizeof(long long));
 
-    printf("Used %lld instructions\n", count);
+        printf("Used %lld instructions\n", count);
 
-    close(fd);
+        close(fd);
+    }
+   
 }

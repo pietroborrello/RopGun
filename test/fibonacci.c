@@ -84,17 +84,17 @@ int main (int argc, char* argv[])
     printf("%llu\n", fib_rec(n));
   else if(type == 1)
     {
-int a=0;
-for(int i=0; i<n; i++ )
-{
-a+=fib(3);
-a+=fib(3);
-a+=fib(3);
-a+=fib(3);
-a+=fib(3);
-}    
-printf("%d\n", a); 
-}
+      int a=0;
+      for(int i=0; i<n; i++ )
+      {
+      a+=fib(3);
+      a+=fib(3);
+      a+=fib(3);
+      a+=fib(3);
+      a+=fib(3);
+      }    
+      printf("%d\n", a); 
+      }
   else if(type == 2)
     printf("%llu\n", fib_rop(n));
   
