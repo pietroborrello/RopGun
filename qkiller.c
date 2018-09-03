@@ -33,12 +33,13 @@ int main(int argc, char **argv)
     pe.exclude_kernel = 1;
     pe.exclude_hv = 1;
 
-    fd = perf_event_open(&pe, 0, -1, -1, PERF_FLAG_FD_CLOEXEC);
+    fd = perf_event_open(&pe, 0, -1, -1, 0);
     if (fd == -1)
     {
         fprintf(stderr, "Error opening leader %llx\n", pe.config);
         exit(EXIT_FAILURE);
     }
+    ioctl(fd, PERF_EVENT_IOC_RESET, 0);
 
     /*Spawn a child to run the program.*/
     pid_t pid = fork();
@@ -46,9 +47,8 @@ int main(int argc, char **argv)
     { /* child process */
         static char *argv[] = {"echo", "aaa", NULL};
 
-        ioctl(fd, PERF_EVENT_IOC_RESET, 0);
         ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
-        
+
         execv("/bin/echo", argv);
         exit(127); /* only if execv fails */
     }
