@@ -8,6 +8,8 @@
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 
+static volatile int init_complete;
+
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
                 int cpu, int group_fd, unsigned long flags)
@@ -33,27 +35,32 @@ int main(int argc, char **argv)
     pe.exclude_kernel = 1;
     pe.exclude_hv = 1;
 
-    fd = perf_event_open(&pe, 0, -1, -1, 0);
-    if (fd == -1)
-    {
-        fprintf(stderr, "Error opening leader %llx\n", pe.config);
-        exit(EXIT_FAILURE);
-    }
-    ioctl(fd, PERF_EVENT_IOC_RESET, 0);
-
     /*Spawn a child to run the program.*/
     pid_t pid = fork();
     if (pid == 0)
     { /* child process */
-        static char *argv[] = {"echo", "aaa", NULL};
+        static char *_argv[] = {"echo", "aaa", NULL};
 
-        ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+        while (!init_complete)
+            ;
 
-        execv("/bin/echo", argv);
+        execv("/bin/echo", _argv);
         exit(127); /* only if execv fails */
     }
     else
     { /* pid!=0; parent process */
+        fd = perf_event_open(&pe, pid, -1, -1, 0);
+        if (fd == -1)
+        {
+            fprintf(stderr, "Error opening leader %llx\n", pe.config);
+            exit(EXIT_FAILURE);
+        }
+
+        ioctl(fd, PERF_EVENT_IOC_RESET, 0);
+        ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+
+        init_complete = 1;
+
         waitpid(pid, 0, 0); /* wait for child to exit */
 
         ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
