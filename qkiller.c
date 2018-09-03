@@ -8,8 +8,6 @@
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 
-static volatile int init_complete;
-
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
                 int cpu, int group_fd, unsigned long flags)
@@ -41,8 +39,7 @@ int main(int argc, char **argv)
     { /* child process */
         static char *_argv[] = {"echo", "aaa", NULL};
 
-        while (!init_complete)
-            ;
+        sleep(1); // TODO: FIXIT!!
 
         execv("/bin/echo", _argv);
         exit(127); /* only if execv fails */
@@ -58,8 +55,6 @@ int main(int argc, char **argv)
 
         ioctl(fd, PERF_EVENT_IOC_RESET, 0);
         ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
-
-        init_complete = 1;
 
         waitpid(pid, 0, 0); /* wait for child to exit */
 
