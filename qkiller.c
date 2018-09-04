@@ -128,7 +128,8 @@ int main(int argc, char**argv)
                 val2 = rf->values[i].value;
             }
         }
-
+        // format numbers to 1.000.000 like
+        setlocale(LC_NUMERIC, "en_US");
         printf("%lu events read:\n", rf->nr);
         printf("%'lu branches\n", val1);
         printf("%'lu mispredicted branches\n", val2);
