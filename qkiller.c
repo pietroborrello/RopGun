@@ -4,8 +4,6 @@
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
-#include <semaphore.h>
-#include <fcntl.h>
 #include <locale.h>
 #include <sys/ioctl.h>
 #include <sys/types.h> /* for pid_t */
@@ -14,8 +12,6 @@
 #include <sys/user.h>
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
-
-#define SEM_NAME "qkiller_start_semaphore"
 
 #define PACK_RAW(event_num, umask_value) ((umask_value<<0x8) + event_num)
 
@@ -65,27 +61,18 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
 
     int main(int argc, char **argv)
 {
-    sem_t *sem;
-
     if (argc < 2)
     {
         fprintf(stderr, "Usage: %s <cmd>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
-    if ((sem = sem_open(SEM_NAME, O_CREAT | O_EXCL)) == SEM_FAILED)
-    {
-        perror("semaphore initilization");
-        exit(1);
-    }
-
     /*Spawn a child to run the program.*/
     pid_t pid = fork();
     if (pid == 0)
     { /* child process */
         extern char **environ;
-        sem_wait(sem);
-
+        ptrace(PTRACE_TRACEME, 0, NULL, NULL);
         execve(argv[1], &argv[1], environ);
         fprintf(stderr, "Execv failed: %s\n", strerror(errno));
         exit(127); /* only if execv fails */
@@ -95,6 +82,7 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
         struct perf_event_attr pe;
         int fd1, fd2;
         int ret;
+        int status;
         uint64_t id1, id2;
         uint64_t val1, val2;
         char buf[4096];
@@ -121,8 +109,14 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
         ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
         ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
         
-        sem_post(sem);
-        waitpid(pid, 0, 0); /* wait for child to exit */
+        sleep(2);
+        while (waitpid(pid, &status, 0) && !WIFEXITED(status))
+        {
+            struct user_regs_struct regs;
+            ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+            fprintf(stderr, "system call %llu\n", regs.orig_rax);
+            ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
+        }
 
         ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
         ret = read(fd1, buf, sizeof(buf));
@@ -142,9 +136,7 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
         printf("%'lu returns\n", val1);
         // Taken speculative and retired mispredicted indirect branches that are returns.
         printf("%'lu mispredicted returns\n", val2);
-out:    
-        sem_close(sem);
-        sem_unlink(SEM_NAME);
+
         close(fd2);
         close(fd1);
         return ret;
