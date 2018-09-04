@@ -5,11 +5,14 @@
 #include <string.h>
 #include <errno.h>
 #include <semaphore.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h> /* for pid_t */
 #include <sys/wait.h>  /* for wait */
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
+
+#define SEM_NAME "qkiller_start_semaphore"
 
 struct read_format
 {
@@ -49,7 +52,7 @@ int main(int argc, char**argv)
 		exit(EXIT_FAILURE);
 	}
 
-    if ((sem = sem_open("qkiller_semaphore", O_CREAT | O_EXCL)) == SEM_FAILED)
+    if ((sem = sem_open(SEM_NAME, O_CREAT | O_EXCL)) == SEM_FAILED)
     {
         perror("semaphore initilization");
         exit(1);
@@ -83,7 +86,8 @@ int main(int argc, char**argv)
         if (fd1 == -1)
         {
             fprintf(stderr, "Error opening leader %llx\n", pe.config);
-            exit(EXIT_FAILURE);
+            ret = EXIT_FAILURE;
+            goto out;
         }
         ioctl(fd1, PERF_EVENT_IOC_ID, &id1);
 
@@ -100,7 +104,8 @@ int main(int argc, char**argv)
         if (fd2 == -1)
         {
             fprintf(stderr, "Error opening second event %llx\n", pe.config);
-            exit(EXIT_FAILURE);
+            ret = EXIT_FAILURE;
+            goto out;
         }
         ioctl(fd2, PERF_EVENT_IOC_ID, &id2);
 
@@ -115,7 +120,8 @@ int main(int argc, char**argv)
         if (ret == -1)
         {
             fprintf(stderr, "Error reading events: %s\n",strerror(errno));
-            exit(EXIT_FAILURE);
+            ret = EXIT_FAILURE;
+            goto out;
         }
         for (i = 0; i < rf->nr; i++) {
             if (rf->values[i].id == id1) {
@@ -128,9 +134,11 @@ int main(int argc, char**argv)
         printf("%lu events read:\n", rf->nr);
         printf("%lu branches\n", val1);
         printf("%lu mispredicted branches\n", val2);
-
+out:    
+        sem_close(sem);
+        sem_unlink(SEM_NAME);
         close(fd2);
         close(fd1);
+        return ret;
     }
-   
 }
