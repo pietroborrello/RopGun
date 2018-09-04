@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
+#include <semaphore.h>
 #include <sys/ioctl.h>
 #include <sys/types.h> /* for pid_t */
 #include <sys/wait.h>  /* for wait */
@@ -40,19 +41,28 @@ int main(int argc, char**argv)
     int i;
     char buf[4096];
     struct read_format *rf = (struct read_format *)buf;
+    sem_t *sem;
 
-    if(argc < 2) {
-		fprintf(stderr, "Usage: %s <cmd>\n", argv[0]);
+    if (argc < 2)
+    {
+        fprintf(stderr, "Usage: %s <cmd>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
+
+    if ((sem = sem_open("qkiller_semaphore", O_CREAT | O_EXCL)) == SEM_FAILED)
+    {
+        perror("semaphore initilization");
+        exit(1);
+    }
 
     /*Spawn a child to run the program.*/
     pid_t pid = fork();
     if (pid == 0)
     { /* child process */
         extern char **environ;
-        printf("%p\n", argv);
-        sleep(2); // TODO: FIXIT!!
+        printf("waiting\n");
+        sem_wait(sem);
+        printf("started\n");
 
         execve(argv[1], &argv[1], environ);
         fprintf(stderr, "Execv failed: %s\n", strerror(errno));
@@ -96,7 +106,8 @@ int main(int argc, char**argv)
 
         ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
         ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
-
+        printf("starting\n");
+        sem_post(sem);
         waitpid(pid, 0, 0); /* wait for child to exit */
 
         ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
