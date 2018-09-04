@@ -89,7 +89,7 @@ int main(int argc, char **argv)
         waitpid(pid, 0, 0); /* wait for child to exit */
 
         ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
-        ret = read(fd, &events, sizeof(events_t));
+        ret = read(fd, &events, sizeof(struct events_t));
         if (ret == -1)
         {
             fprintf(stderr, "Error reading events: %s\n",strerror(errno));
@@ -99,6 +99,9 @@ int main(int argc, char **argv)
         printf("%lld events read:\n", events.nr);
         printf("%lld branches\n", events.value1);
         printf("%lld mispredicted branches\n", events.value2);
+        printf("%lld mispredicted branches\n", events.value3);
+        printf("%lld mispredicted branches\n", events.value4);
+        printf("%lld mispredicted branches\n", events.value5);
 
         close(fd);
     }
