@@ -54,6 +54,7 @@ int main(int argc, char**argv)
         sleep(2); // TODO: FIXIT!!
 
         execv(argv[1], &argv[1]);
+        fprintf(stderr, "Execv failed: %s\n", strerror(errno));
         exit(127); /* only if execv fails */
     }
     else
