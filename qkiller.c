@@ -50,9 +50,10 @@ int main(int argc, char *argv[])
     pid_t pid = fork();
     if (pid == 0)
     { /* child process */
+        printf("%p\n", argv);
         sleep(2); // TODO: FIXIT!!
 
-        execv(argv[1], &argv[1]);
+        execv(argv[1], (char* const *)(argv+sizeof(char*)));
         exit(127); /* only if execv fails */
     }
     else
