@@ -15,6 +15,8 @@
 
 #define SEM_NAME "qkiller_start_semaphore"
 
+#define PACK_RAW(event_num, umask_value) ((umask_value<<0x8) + event_num)
+
 struct read_format
 {
     uint64_t nr;
@@ -86,7 +88,7 @@ int main(int argc, char**argv)
     else
     { /* pid!=0; parent process */
 
-        fd1 = init_event_listener(&pe, PERF_TYPE_RAW, 0x8888, pid, -1);
+        fd1 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(0x88, 0x88), pid, -1);
         if (fd1 == -1)
         {
             fprintf(stderr, "Error opening leader %llx\n", pe.config);
@@ -95,7 +97,7 @@ int main(int argc, char**argv)
         }
         ioctl(fd1, PERF_EVENT_IOC_ID, &id1);
 
-        fd2 = init_event_listener(&pe, PERF_TYPE_RAW, 0x8889, pid, fd1);
+        fd2 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(0x89, 0x88), pid, fd1);
         if (fd2 == -1)
         {
             fprintf(stderr, "Error opening second event %llx\n", pe.config);
@@ -128,8 +130,8 @@ int main(int argc, char**argv)
         // format numbers to 1.000.000 like
         setlocale(LC_NUMERIC, "");
         printf("%lu events read:\n", rf->nr);
-        printf("%'lu retired returns\n", val1);
-        printf("%'lu mispredicted retired returns\n", val2);
+        printf("%'lu taken speculative and retired indirect branches that are returns.\n", val1);
+        printf("%'lu taken speculative and retired mispredicted indirect branches that are returns.\n", val2);
 out:    
         sem_close(sem);
         sem_unlink(SEM_NAME);
