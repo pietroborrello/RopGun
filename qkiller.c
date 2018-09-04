@@ -108,9 +108,9 @@ int main(int argc, char **argv)
             }
         }
 
-        printf("%d events read:\n", rf->nr);
-        printf("%lld branches\n", val1);
-        printf("%lld mispredicted branches\n", val2);
+        printf("%lu events read:\n", rf->nr);
+        printf("%lu branches\n", val1);
+        printf("%lu mispredicted branches\n", val2);
 
         close(fd2);
         close(fd1);
