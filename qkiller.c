@@ -89,7 +89,7 @@ int main(int argc, char **argv)
         waitpid(pid, 0, 0); /* wait for child to exit */
 
         ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
-        ret = read(fd, &events, sizeof(long long));
+        ret = read(fd, &events, sizeof(events_t));
         if (ret == -1)
         {
             fprintf(stderr, "Error reading events: %s\n",strerror(errno));
