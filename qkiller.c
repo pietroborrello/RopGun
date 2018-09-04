@@ -30,7 +30,7 @@ perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
     return ret;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char**argv)
 {
     struct perf_event_attr pe;
     int fd1, fd2;
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
         printf("%p\n", argv);
         sleep(2); // TODO: FIXIT!!
 
-        execv(argv[1], (char* const *)(argv+sizeof(char*)));
+        execv(argv[1], &argv[1]);
         exit(127); /* only if execv fails */
     }
     else
