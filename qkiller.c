@@ -35,6 +35,19 @@ perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
     return ret;
 }
 
+int init_event_listener(struct perf_event_attr *pe, uint64_t type, uint64_t config, pid_t pid, int group_fd)
+{
+    memset(pe, 0, sizeof(struct perf_event_attr));
+    pe->type = type;
+    pe->size = sizeof(struct perf_event_attr);
+    pe->config = config;
+    pe->read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
+    pe->disabled = 1;
+    pe->exclude_kernel = 1;
+    pe->exclude_hv = 1;
+    return perf_event_open(pe, pid, -1, group_fd, 0);
+}
+
 int main(int argc, char**argv)
 {
     struct perf_event_attr pe;
@@ -73,15 +86,7 @@ int main(int argc, char**argv)
     else
     { /* pid!=0; parent process */
 
-        memset(&pe, 0, sizeof(struct perf_event_attr));
-        pe.type = PERF_TYPE_RAW;
-        pe.size = sizeof(struct perf_event_attr);
-        pe.config = 0x8888;
-        pe.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
-        pe.disabled = 1;
-        pe.exclude_kernel = 1;
-        pe.exclude_hv = 1;
-        fd1 = perf_event_open(&pe, pid, -1, -1, 0);
+        fd1 = init_event_listener(&pe, PERF_TYPE_RAW, 0x8888, pid, -1);
         if (fd1 == -1)
         {
             fprintf(stderr, "Error opening leader %llx\n", pe.config);
@@ -90,16 +95,7 @@ int main(int argc, char**argv)
         }
         ioctl(fd1, PERF_EVENT_IOC_ID, &id1);
 
-        memset(&pe, 0, sizeof(struct perf_event_attr));
-        pe.type = PERF_TYPE_RAW;
-        pe.size = sizeof(struct perf_event_attr);
-        pe.config = 0x8889;
-        pe.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
-        pe.disabled = 1;
-        pe.exclude_kernel = 1;
-        pe.exclude_hv = 1;
-        
-        fd2 = perf_event_open(&pe, pid, -1, fd1, 0);
+        fd2 = init_event_listener(&pe, PERF_TYPE_RAW, 0x8889, pid, fd1);
         if (fd2 == -1)
         {
             fprintf(stderr, "Error opening second event %llx\n", pe.config);
