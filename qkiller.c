@@ -30,7 +30,7 @@ perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
     return ret;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
     struct perf_event_attr pe;
     int fd1, fd2;
@@ -41,15 +41,18 @@ int main(int argc, char **argv)
     char buf[4096];
     struct read_format *rf = (struct read_format *)buf;
 
+    if(argc < 2) {
+		fprintf(stderr, "Usage: %s <cmd>\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
     /*Spawn a child to run the program.*/
     pid_t pid = fork();
     if (pid == 0)
     { /* child process */
-        static char *_argv[] = {NULL};
-
         sleep(2); // TODO: FIXIT!!
 
-        execv("./run.sh", _argv);
+        execv(argv[1], &argv[1]);
         exit(127); /* only if execv fails */
     }
     else
