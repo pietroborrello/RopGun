@@ -63,9 +63,7 @@ int main(int argc, char**argv)
     if (pid == 0)
     { /* child process */
         extern char **environ;
-        printf("waiting\n");
         sem_wait(sem);
-        printf("started\n");
 
         execve(argv[1], &argv[1], environ);
         fprintf(stderr, "Execv failed: %s\n", strerror(errno));
@@ -111,7 +109,7 @@ int main(int argc, char**argv)
 
         ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
         ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
-        printf("starting\n");
+        
         sem_post(sem);
         waitpid(pid, 0, 0); /* wait for child to exit */
 
@@ -132,8 +130,8 @@ int main(int argc, char**argv)
         }
 
         printf("%lu events read:\n", rf->nr);
-        printf("%lu branches\n", val1);
-        printf("%lu mispredicted branches\n", val2);
+        printf("%'lu branches\n", val1);
+        printf("%'lu mispredicted branches\n", val2);
 out:    
         sem_close(sem);
         sem_unlink(SEM_NAME);
