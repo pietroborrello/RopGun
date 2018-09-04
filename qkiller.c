@@ -10,6 +10,8 @@
 #include <sys/ioctl.h>
 #include <sys/types.h> /* for pid_t */
 #include <sys/wait.h>  /* for wait */
+#include <sys/ptrace.h>
+#include <sys/user.h>
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 
@@ -50,7 +52,18 @@ int init_event_listener(struct perf_event_attr *pe, uint64_t type, uint64_t conf
     return perf_event_open(pe, pid, -1, group_fd, 0);
 }
 
-int main(int argc, char**argv)
+uint64_t get_value(struct read_format *rf, uint64_t id)
+{
+    int i;
+    for (i = 0; i < rf->nr; i++) {
+        if (rf->values[i].id == id) {
+            return rf->values[i].value;
+        }
+    }
+    return 0;
+}
+
+    int main(int argc, char **argv)
 {
     sem_t *sem;
 
@@ -84,7 +97,6 @@ int main(int argc, char**argv)
         int ret;
         uint64_t id1, id2;
         uint64_t val1, val2;
-        int i;
         char buf[4096];
         struct read_format *rf = (struct read_format *)buf;
 
@@ -120,13 +132,9 @@ int main(int argc, char**argv)
             ret = EXIT_FAILURE;
             goto out;
         }
-        for (i = 0; i < rf->nr; i++) {
-            if (rf->values[i].id == id1) {
-                val1 = rf->values[i].value;
-            } else if (rf->values[i].id == id2) {
-                val2 = rf->values[i].value;
-            }
-        }
+        
+        val1 = get_value(id1);
+        val2 = get_value(id2);
         // format numbers to 1.000.000 like
         setlocale(LC_NUMERIC, "");
         printf("%lu events read:\n", rf->nr);
