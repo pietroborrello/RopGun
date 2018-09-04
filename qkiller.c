@@ -19,6 +19,7 @@ struct events_t
     unsigned long long value5;
     unsigned long long value6;
     unsigned long long value7;
+    unsigned long long value8;
 };
 
 static long
@@ -35,7 +36,7 @@ perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 int main(int argc, char **argv)
 {
     struct perf_event_attr pe;
-    struct events_t events;
+    struct events_t events = {0};
     int fd;
     int ret;
 
@@ -102,6 +103,9 @@ int main(int argc, char **argv)
         printf("%lld mispredicted branches\n", events.value3);
         printf("%lld mispredicted branches\n", events.value4);
         printf("%lld mispredicted branches\n", events.value5);
+        printf("%lld mispredicted branches\n", events.value6);
+        printf("%lld mispredicted branches\n", events.value7);
+        printf("%lld mispredicted branches\n", events.value8);
 
         close(fd);
     }
