@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h> /* for pid_t */
 #include <sys/wait.h>  /* for wait */
@@ -86,7 +87,7 @@ int main(int argc, char **argv)
         ret = read(fd, &events, sizeof(long long));
         if (ret == -1)
         {
-            fprintf(stderr, "Error reading events\n");
+            fprintf(stderr, "Error reading events: %d %s\n", errno, strerror(errno));
             exit(EXIT_FAILURE);
         }
 
