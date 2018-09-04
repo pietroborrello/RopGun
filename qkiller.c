@@ -52,14 +52,6 @@ int init_event_listener(struct perf_event_attr *pe, uint64_t type, uint64_t conf
 
 int main(int argc, char**argv)
 {
-    struct perf_event_attr pe;
-    int fd1, fd2;
-    int ret;
-    uint64_t id1, id2;
-    uint64_t val1, val2;
-    int i;
-    char buf[4096];
-    struct read_format *rf = (struct read_format *)buf;
     sem_t *sem;
 
     if (argc < 2)
@@ -87,6 +79,14 @@ int main(int argc, char**argv)
     }
     else
     { /* pid!=0; parent process */
+        struct perf_event_attr pe;
+        int fd1, fd2;
+        int ret;
+        uint64_t id1, id2;
+        uint64_t val1, val2;
+        int i;
+        char buf[4096];
+        struct read_format *rf = (struct read_format *)buf;
 
         fd1 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(0x88, 0x88), pid, -1);
         if (fd1 == -1)
