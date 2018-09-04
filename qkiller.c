@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <locale.h>
 #include <sys/ioctl.h>
 #include <sys/types.h> /* for pid_t */
 #include <sys/wait.h>  /* for wait */
@@ -129,7 +130,7 @@ int main(int argc, char**argv)
             }
         }
         // format numbers to 1.000.000 like
-        setlocale(LC_NUMERIC, "en_US");
+        setlocale(LC_NUMERIC, "");
         printf("%lu events read:\n", rf->nr);
         printf("%'lu branches\n", val1);
         printf("%'lu mispredicted branches\n", val2);
