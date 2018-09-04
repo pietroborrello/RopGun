@@ -50,10 +50,11 @@ int main(int argc, char**argv)
     pid_t pid = fork();
     if (pid == 0)
     { /* child process */
+        extern char **environ;
         printf("%p\n", argv);
         sleep(2); // TODO: FIXIT!!
 
-        execv(argv[1], &argv[1]);
+        execve(argv[1], &argv[1], environ);
         fprintf(stderr, "Execv failed: %s\n", strerror(errno));
         exit(127); /* only if execv fails */
     }
