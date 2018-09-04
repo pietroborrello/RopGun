@@ -133,8 +133,8 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
             goto out;
         }
         
-        val1 = get_value(id1);
-        val2 = get_value(id2);
+        val1 = get_value(rf, id1);
+        val2 = get_value(rf, id2);
         // format numbers to 1.000.000 like
         setlocale(LC_NUMERIC, "");
         printf("%lu events read:\n", rf->nr);
