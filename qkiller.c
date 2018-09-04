@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/ioctl.h>
@@ -79,7 +80,7 @@ int main(int argc, char **argv)
         pe.exclude_kernel = 1;
         pe.exclude_hv = 1;
         
-        fd2 = perf_event_open(&pe, pid, -1, fd, 0);
+        fd2 = perf_event_open(&pe, pid, -1, fd1, 0);
         if (fd2 == -1)
         {
             fprintf(stderr, "Error opening second event %llx\n", pe.config);
@@ -87,12 +88,12 @@ int main(int argc, char **argv)
         }
         ioctl(fd2, PERF_EVENT_IOC_ID, &id2);
 
-        ioctl(fd, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
-        ioctl(fd, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
+        ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+        ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
 
         waitpid(pid, 0, 0); /* wait for child to exit */
 
-        ioctl(fd, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
+        ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
         ret = read(fd1, buf, sizeof(buf));
         if (ret == -1)
         {
@@ -107,11 +108,12 @@ int main(int argc, char **argv)
             }
         }
 
-        printf("%lld events read:\n", rf->nr);
+        printf("%d events read:\n", rf->nr);
         printf("%lld branches\n", val1);
         printf("%lld mispredicted branches\n", val2);
 
-        close(fd);
+        close(fd2);
+        close(fd1);
     }
    
 }
