@@ -92,8 +92,7 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
         if (fd1 == -1)
         {
             fprintf(stderr, "Error opening leader %llx\n", pe.config);
-            ret = EXIT_FAILURE;
-            goto out;
+            exit(EXIT_FAILURE);
         }
         ioctl(fd1, PERF_EVENT_IOC_ID, &id1);
 
@@ -101,8 +100,7 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
         if (fd2 == -1)
         {
             fprintf(stderr, "Error opening second event %llx\n", pe.config);
-            ret = EXIT_FAILURE;
-            goto out;
+            exit(EXIT_FAILURE);
         }
         ioctl(fd2, PERF_EVENT_IOC_ID, &id2);
 
@@ -123,8 +121,7 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
         if (ret == -1)
         {
             fprintf(stderr, "Error reading events: %s\n",strerror(errno));
-            ret = EXIT_FAILURE;
-            goto out;
+            exit(EXIT_FAILURE);
         }
         
         val1 = get_value(rf, id1);
@@ -139,6 +136,6 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
 
         close(fd2);
         close(fd1);
-        return ret;
+        return 0;
     }
 }
