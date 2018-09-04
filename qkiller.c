@@ -130,8 +130,10 @@ int main(int argc, char**argv)
         // format numbers to 1.000.000 like
         setlocale(LC_NUMERIC, "");
         printf("%lu events read:\n", rf->nr);
-        printf("%'lu taken speculative and retired indirect branches that are returns.\n", val1);
-        printf("%'lu taken speculative and retired mispredicted indirect branches that are returns.\n", val2);
+        // Taken speculative and retired indirect branches that are returns.
+        printf("%'lu returns\n", val1);
+        // Taken speculative and retired mispredicted indirect branches that are returns.
+        printf("%'lu mispredicted returns\n", val2);
 out:    
         sem_close(sem);
         sem_unlink(SEM_NAME);
