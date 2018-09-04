@@ -61,7 +61,15 @@ int main(int argc, char **argv)
             fprintf(stderr, "Error opening leader %llx\n", pe.config);
             exit(EXIT_FAILURE);
         }
+        memset(&pe, 0, sizeof(struct perf_event_attr));
+        pe.type = PERF_TYPE_HARDWARE;
+        pe.size = sizeof(struct perf_event_attr);
         pe.config = PERF_COUNT_HW_BRANCH_MISSES;
+        pe.read_format = PERF_FORMAT_GROUP;
+        pe.disabled = 1;
+        pe.exclude_kernel = 1;
+        pe.exclude_hv = 1;
+        
         ret = perf_event_open(&pe, pid, -1, fd, 0);
         if (ret == -1)
         {
@@ -75,8 +83,14 @@ int main(int argc, char **argv)
         waitpid(pid, 0, 0); /* wait for child to exit */
 
         ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
-        read(fd, &events, sizeof(long long));
+        ret = read(fd, &events, sizeof(long long));
+        if (ret == -1)
+        {
+            fprintf(stderr, "Error reading events\n");
+            exit(EXIT_FAILURE);
+        }
 
+        printf("%lld events read:\n", events.nr);
         printf("%lld branches\n", events.value1);
         printf("%lld mispredicted branches\n", events.value2);
 
