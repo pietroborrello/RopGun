@@ -14,6 +14,11 @@ struct events_t
     unsigned long long nr;           /* The number of events */
     unsigned long long value1; /* The value of the event */
     unsigned long long value2;
+    unsigned long long value3;
+    unsigned long long value4;
+    unsigned long long value5;
+    unsigned long long value6;
+    unsigned long long value7;
 };
 
 static long
@@ -87,7 +92,7 @@ int main(int argc, char **argv)
         ret = read(fd, &events, sizeof(long long));
         if (ret == -1)
         {
-            fprintf(stderr, "Error reading events: %d %s\n", errno, strerror(errno));
+            fprintf(stderr, "Error reading events: %s\n",strerror(errno));
             exit(EXIT_FAILURE);
         }
 
