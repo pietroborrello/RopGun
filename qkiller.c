@@ -74,9 +74,9 @@ int main(int argc, char**argv)
     { /* pid!=0; parent process */
 
         memset(&pe, 0, sizeof(struct perf_event_attr));
-        pe.type = PERF_TYPE_HARDWARE;
+        pe.type = PERF_TYPE_RAW;
         pe.size = sizeof(struct perf_event_attr);
-        pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
+        pe.config = 0x8888;
         pe.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
         pe.disabled = 1;
         pe.exclude_kernel = 1;
@@ -91,9 +91,9 @@ int main(int argc, char**argv)
         ioctl(fd1, PERF_EVENT_IOC_ID, &id1);
 
         memset(&pe, 0, sizeof(struct perf_event_attr));
-        pe.type = PERF_TYPE_HARDWARE;
+        pe.type = PERF_TYPE_RAW;
         pe.size = sizeof(struct perf_event_attr);
-        pe.config = PERF_COUNT_HW_BRANCH_MISSES;
+        pe.config = 0x8889;
         pe.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
         pe.disabled = 1;
         pe.exclude_kernel = 1;
@@ -132,8 +132,8 @@ int main(int argc, char**argv)
         // format numbers to 1.000.000 like
         setlocale(LC_NUMERIC, "");
         printf("%lu events read:\n", rf->nr);
-        printf("%'lu branches\n", val1);
-        printf("%'lu mispredicted branches\n", val2);
+        printf("%'lu retired returns\n", val1);
+        printf("%'lu mispredicted retired returns\n", val2);
 out:    
         sem_close(sem);
         sem_unlink(SEM_NAME);
