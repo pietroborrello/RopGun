@@ -37,11 +37,11 @@ int main(int argc, char **argv)
     pid_t pid = fork();
     if (pid == 0)
     { /* child process */
-        //static char *_argv[] = {"echo", "aaa", NULL};
+        static char *_argv[] = {NULL};
 
         sleep(1); // TODO: FIXIT!!
 
-        execv("./run.sh", NULL);
+        execv("./run.sh", _argv);
         exit(127); /* only if execv fails */
     }
     else
