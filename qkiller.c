@@ -140,8 +140,9 @@ int trace_child(pid_t child)
             exit(EXIT_FAILURE);
         }
 
-        retired_rets += get_value(rf, retired_ret_id);
-        mispredicted_rets += get_value(rf, mispredicted_ret_id);
+        retired_rets = get_value(rf, retired_ret_id);
+        mispredicted_rets = get_value(rf, mispredicted_ret_id);
+
 
         //printf("%lu events read:\n", rf->nr);
         // Taken speculative and retired indirect branches that are returns.
