@@ -88,6 +88,7 @@ int wait_for_syscall(pid_t child) {
 }
 
 const char *callname(long call);
+const char *callname32(long call);
 
 int trace_child(pid_t child)
 {
