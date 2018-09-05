@@ -86,6 +86,9 @@ int trace_child(pid_t child)
     char buf[4096];
     struct read_format *rf = (struct read_format *)buf;
 
+    // format numbers to 1.000.000 like
+    setlocale(LC_NUMERIC, "");
+
     fd1 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(RETIRED_BRANCES, RET_MASK), child, -1);
     if (fd1 == -1)
     {
@@ -112,31 +115,35 @@ int trace_child(pid_t child)
 
     while (!wait_for_syscall(child))
     {
+        /*
         struct user_regs_struct regs;
         ptrace(PTRACE_GETREGS, child, NULL, &regs);
         fprintf(stderr, "system call %llu\n", regs.orig_rax);
+        */
+        ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
+        ret = read(fd1, buf, sizeof(buf));
+        if (ret == -1)
+        {
+            fprintf(stderr, "Error reading events: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
+        retired_rets = get_value(rf, retired_ret_id);
+        mispredicted_rets = get_value(rf, mispredicted_ret_id);
+
+        //printf("%lu events read:\n", rf->nr);
+        // Taken speculative and retired indirect branches that are returns.
+        printf("%'lu returns\n", retired_rets);
+        // Taken speculative and retired mispredicted indirect branches that are returns.
+        printf("%'lu mispredicted returns\n", mispredicted_rets);
+
+        ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+        ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
+
         ptrace(PTRACE_SYSCALL, child, NULL, NULL);
         if (wait_for_syscall(child) != 0)
             break;
     }
-
-    ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
-    ret = read(fd1, buf, sizeof(buf));
-    if (ret == -1)
-    {
-        fprintf(stderr, "Error reading events: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    retired_rets = get_value(rf, retired_ret_id);
-    mispredicted_rets = get_value(rf, mispredicted_ret_id);
-    // format numbers to 1.000.000 like
-    setlocale(LC_NUMERIC, "");
-    printf("%lu events read:\n", rf->nr);
-    // Taken speculative and retired indirect branches that are returns.
-    printf("%'lu returns\n", retired_rets);
-    // Taken speculative and retired mispredicted indirect branches that are returns.
-    printf("%'lu mispredicted returns\n", mispredicted_rets);
 
     close(fd2);
     close(fd1);
