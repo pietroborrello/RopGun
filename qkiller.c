@@ -115,11 +115,11 @@ int trace_child(pid_t child)
 
     while (!wait_for_syscall(child))
     {
-        /*
+        
         struct user_regs_struct regs;
         ptrace(PTRACE_GETREGS, child, NULL, &regs);
         fprintf(stderr, "system call %llu\n", regs.orig_rax);
-        */
+        
         ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
         ret = read(fd1, buf, sizeof(buf));
         if (ret == -1)
