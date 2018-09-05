@@ -20,6 +20,9 @@
 #define MISPREDICTED_BRANCES 0x89
 #define RET_MASK 0x88
 
+#define RET_THRESHOLD 20
+#define WARN_THRESHOLD 30.0
+
 #define ANSI_COLOR_RED "\x1b[31m"
 #define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_YELLOW "\x1b[33m"
@@ -150,8 +153,14 @@ int trace_child(pid_t child)
         // Taken speculative and retired mispredicted indirect branches that are returns.
         printf("%'lu mispredicted returns\n", mispredicted_rets);
 
-        misprediction_rate = (((double) mispredicted_rets) / retired_rets) * 100;
-        printf("%.1lf%% misprediction\n", misprediction_rate);
+        if (retired_rets > RET_THRESHOLD)
+        {
+            misprediction_rate = (((double) mispredicted_rets) / retired_rets) * 100;
+            if (misprediction_rate > WARN_THRESHOLD)
+                printf(ANSI_COLOR_RED "%.1lf%% misprediction" ANSI_COLOR_RESET "\n", misprediction_rate);
+            else
+                printf(ANSI_COLOR_GREEN "%.1lf%% misprediction" ANSI_COLOR_RESET "\n", misprediction_rate);
+        }
 
         ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
         ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
