@@ -86,6 +86,7 @@ int trace_child(pid_t child)
     int status;
     uint64_t retired_ret_id, mispredicted_ret_id;
     uint64_t retired_rets, mispredicted_rets;
+    double misprediction_rate = 0.0;
     char buf[4096];
     struct read_format *rf = (struct read_format *)buf;
 
@@ -139,6 +140,9 @@ int trace_child(pid_t child)
         printf("%'lu returns\n", retired_rets);
         // Taken speculative and retired mispredicted indirect branches that are returns.
         printf("%'lu mispredicted returns\n", mispredicted_rets);
+
+        misprediction_rate = (((double) mispredicted_rets) / retired_rets) * 100;
+        printf("%.2lf misprediction\n", misprediction_rate);
 
         ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
         ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
