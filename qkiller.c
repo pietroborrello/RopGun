@@ -63,6 +63,18 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
     return 0;
 }
 
+int wait_for_syscall(pid_t child) {
+    int status;
+    while (1) {
+        ptrace(PTRACE_SYSCALL, child, 0, 0);
+        waitpid(child, &status, 0);
+        if (WIFSTOPPED(status) && WSTOPSIG(status) & 0x80)
+            return 0;
+        if (WIFEXITED(status))
+            return 1;
+    }
+}
+
 int trace_child(pid_t child)
 {
     struct perf_event_attr pe;
@@ -93,12 +105,19 @@ int trace_child(pid_t child)
     ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
     ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
 
-    while (waitpid(child, &status, 0) && !WIFEXITED(status))
+    // wait for first sigstop
+    waitpid(child, &status, 0);
+    // set syscall trace
+    ptrace(PTRACE_SETOPTIONS, child, 0, PTRACE_O_TRACESYSGOOD);
+
+    while (!wait_for_syscall(child))
     {
         struct user_regs_struct regs;
         ptrace(PTRACE_GETREGS, child, NULL, &regs);
         fprintf(stderr, "system call %llu\n", regs.orig_rax);
         ptrace(PTRACE_SYSCALL, child, NULL, NULL);
+        if (wait_for_syscall(child) != 0)
+            break;
     }
 
     ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
