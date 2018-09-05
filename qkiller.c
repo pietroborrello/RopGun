@@ -15,6 +15,10 @@
 
 #define PACK_RAW(event_num, umask_value) ((umask_value<<0x8) + event_num)
 
+#define RETIRED_BRANCES 0x88
+#define MISPREDICTED_BRANCES 0x89
+#define RET_MASK 0x88
+
 struct read_format
 {
     uint64_t nr;
@@ -59,6 +63,67 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
     return 0;
 }
 
+int trace_child(pid_t child)
+{
+    struct perf_event_attr pe;
+    int fd1, fd2;
+    int ret;
+    int status;
+    uint64_t retired_ret_id, mispredicted_ret_id;
+    uint64_t retired_rets, mispredicted_rets;
+    char buf[4096];
+    struct read_format *rf = (struct read_format *)buf;
+
+    fd1 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(RETIRED_BRANCES, RET_MASK), child, -1);
+    if (fd1 == -1)
+    {
+        fprintf(stderr, "Error opening leader %llx\n", pe.config);
+        exit(EXIT_FAILURE);
+    }
+    ioctl(fd1, PERF_EVENT_IOC_ID, &retired_ret_id);
+
+    fd2 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(MISPREDICTED_BRANCES, RET_MASK), child, fd1);
+    if (fd2 == -1)
+    {
+        fprintf(stderr, "Error opening second event %llx\n", pe.config);
+        exit(EXIT_FAILURE);
+    }
+    ioctl(fd2, PERF_EVENT_IOC_ID, &mispredicted_ret_id);
+
+    ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+    ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
+
+    while (waitpid(child, &status, 0) && !WIFEXITED(status))
+    {
+        struct user_regs_struct regs;
+        ptrace(PTRACE_GETREGS, child, NULL, &regs);
+        fprintf(stderr, "system call %llu\n", regs.orig_rax);
+        ptrace(PTRACE_SYSCALL, child, NULL, NULL);
+    }
+
+    ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
+    ret = read(fd1, buf, sizeof(buf));
+    if (ret == -1)
+    {
+        fprintf(stderr, "Error reading events: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    retired_rets = get_value(rf, retired_ret_id);
+    mispredicted_rets = get_value(rf, mispredicted_ret_id);
+    // format numbers to 1.000.000 like
+    setlocale(LC_NUMERIC, "");
+    printf("%lu events read:\n", rf->nr);
+    // Taken speculative and retired indirect branches that are returns.
+    printf("%'lu returns\n", retired_rets);
+    // Taken speculative and retired mispredicted indirect branches that are returns.
+    printf("%'lu mispredicted returns\n", mispredicted_rets);
+
+    close(fd2);
+    close(fd1);
+    return 0;
+}
+
     int main(int argc, char **argv)
 {
     if (argc < 2)
@@ -73,69 +138,13 @@ uint64_t get_value(struct read_format *rf, uint64_t id)
     { /* child process */
         extern char **environ;
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+        kill(getpid(), SIGSTOP);
         execve(argv[1], &argv[1], environ);
         fprintf(stderr, "Execv failed: %s\n", strerror(errno));
         exit(127); /* only if execv fails */
     }
     else
     { /* pid!=0; parent process */
-        struct perf_event_attr pe;
-        int fd1, fd2;
-        int ret;
-        int status;
-        uint64_t id1, id2;
-        uint64_t val1, val2;
-        char buf[4096];
-        struct read_format *rf = (struct read_format *)buf;
-
-        fd1 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(0x88, 0x88), pid, -1);
-        if (fd1 == -1)
-        {
-            fprintf(stderr, "Error opening leader %llx\n", pe.config);
-            exit(EXIT_FAILURE);
-        }
-        ioctl(fd1, PERF_EVENT_IOC_ID, &id1);
-
-        fd2 = init_event_listener(&pe, PERF_TYPE_RAW, PACK_RAW(0x89, 0x88), pid, fd1);
-        if (fd2 == -1)
-        {
-            fprintf(stderr, "Error opening second event %llx\n", pe.config);
-            exit(EXIT_FAILURE);
-        }
-        ioctl(fd2, PERF_EVENT_IOC_ID, &id2);
-
-        ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
-        ioctl(fd1, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
-        
-        sleep(2);
-        while (waitpid(pid, &status, 0) && !WIFEXITED(status))
-        {
-            struct user_regs_struct regs;
-            ptrace(PTRACE_GETREGS, pid, NULL, &regs);
-            fprintf(stderr, "system call %llu\n", regs.orig_rax);
-            ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
-        }
-
-        ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
-        ret = read(fd1, buf, sizeof(buf));
-        if (ret == -1)
-        {
-            fprintf(stderr, "Error reading events: %s\n",strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-        
-        val1 = get_value(rf, id1);
-        val2 = get_value(rf, id2);
-        // format numbers to 1.000.000 like
-        setlocale(LC_NUMERIC, "");
-        printf("%lu events read:\n", rf->nr);
-        // Taken speculative and retired indirect branches that are returns.
-        printf("%'lu returns\n", val1);
-        // Taken speculative and retired mispredicted indirect branches that are returns.
-        printf("%'lu mispredicted returns\n", val2);
-
-        close(fd2);
-        close(fd1);
-        return 0;
+        return trace_child(pid);
     }
 }
