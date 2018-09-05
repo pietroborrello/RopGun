@@ -133,8 +133,8 @@ int trace_child(pid_t child)
         
         struct user_regs_struct regs;
         ptrace(PTRACE_GETREGS, child, NULL, &regs);
-        fprintf(stderr, ANSI_COLOR_GREEN "%s()" ANSI_COLOR_RESET "\n", callname(regs.orig_rax));
-        
+        fprintf(stderr, ANSI_COLOR_YELLOW "%s()" ANSI_COLOR_RESET "\n", callname(regs.orig_rax));
+
         ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
         ret = read(fd1, buf, sizeof(buf));
         if (ret == -1)
