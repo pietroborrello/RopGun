@@ -20,6 +20,14 @@
 #define MISPREDICTED_BRANCES 0x89
 #define RET_MASK 0x88
 
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_GREEN "\x1b[32m"
+#define ANSI_COLOR_YELLOW "\x1b[33m"
+#define ANSI_COLOR_BLUE "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN "\x1b[36m"
+#define ANSI_COLOR_RESET "\x1b[0m"
+
 struct read_format
 {
     uint64_t nr;
@@ -122,7 +130,7 @@ int trace_child(pid_t child)
         
         struct user_regs_struct regs;
         ptrace(PTRACE_GETREGS, child, NULL, &regs);
-        fprintf(stderr, "system call %s\n", callname(regs.orig_rax));
+        fprintf(stderr, ANSI_COLOR_GREEN "%s()" ANSI_COLOR_RESET "\n", callname(regs.orig_rax));
         
         ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
         ret = read(fd1, buf, sizeof(buf));
