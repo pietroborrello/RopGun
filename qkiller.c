@@ -7,6 +7,9 @@
 #define RET_THRESHOLD 20
 #define WARN_THRESHOLD 60.0
 
+#define MONITOR_MODE 0
+#define KILL_MODE 1
+
 const char *callname(long call);
 const char *callname32(long call);
 
@@ -56,7 +59,7 @@ int wait_for_syscall(pid_t child) {
     }
 }
 
-int trace_child(pid_t child)
+int trace_child(pid_t child, int mode)
 {
     struct perf_event_attr pe;
     int fd1, fd2;
@@ -97,22 +100,24 @@ int trace_child(pid_t child)
 
     while (!wait_for_syscall(child))
     {
-
-        union {
-            struct user_regs_struct x86_64_r;
-            struct i386_user_regs_struct i386_r;
-        } regs;
-        struct iovec x86_io = {
-            .iov_base = &regs,
-            .iov_len = sizeof(regs)
-        };
-        //ptrace(PTRACE_GETREGS, child, NULL, &regs);
-        ptrace(PTRACE_GETREGSET, child, NT_PRSTATUS, &x86_io);
-        if (x86_io.iov_len == sizeof(struct i386_user_regs_struct)) {
-            // this is a 32-bit process
-            fprintf(stderr, ANSI_COLOR_BLUE "%s()" ANSI_COLOR_RESET "\n", callname32(regs.i386_r.orig_eax));
-        } else {
-            fprintf(stderr, ANSI_COLOR_CYAN "%s()" ANSI_COLOR_RESET "\n", callname(regs.x86_64_r.orig_rax));
+        if(mode == MONITOR_MODE)
+        {
+            union {
+                struct user_regs_struct x86_64_r;
+                struct i386_user_regs_struct i386_r;
+            } regs;
+            struct iovec x86_io = {
+                .iov_base = &regs,
+                .iov_len = sizeof(regs)
+            };
+            //ptrace(PTRACE_GETREGS, child, NULL, &regs);
+            ptrace(PTRACE_GETREGSET, child, NT_PRSTATUS, &x86_io);
+            if (x86_io.iov_len == sizeof(struct i386_user_regs_struct)) {
+                // this is a 32-bit process
+                fprintf(stderr, ANSI_COLOR_BLUE "%s()" ANSI_COLOR_RESET "\n", callname32(regs.i386_r.orig_eax));
+            } else {
+                fprintf(stderr, ANSI_COLOR_CYAN "%s()" ANSI_COLOR_RESET "\n", callname(regs.x86_64_r.orig_rax));
+            }
         }
 
         ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
@@ -126,20 +131,31 @@ int trace_child(pid_t child)
         retired_rets = get_value(rf, retired_ret_id);
         mispredicted_rets = get_value(rf, mispredicted_ret_id);
 
-
-        //printf("%lu events read:\n", rf->nr);
-        // Taken speculative and retired indirect branches that are returns.
-        printf("%'lu returns\n", retired_rets);
-        // Taken speculative and retired mispredicted indirect branches that are returns.
-        printf("%'lu mispredicted returns\n", mispredicted_rets);
+        if(mode == MONITOR_MODE)
+        {
+            //printf("%lu events read:\n", rf->nr);
+            // Taken speculative and retired indirect branches that are returns.
+            printf("%'lu returns\n", retired_rets);
+            // Taken speculative and retired mispredicted indirect branches that are returns.
+            printf("%'lu mispredicted returns\n", mispredicted_rets);
+        }
 
         if (retired_rets > RET_THRESHOLD)
         {
             misprediction_rate = (((double) mispredicted_rets) / retired_rets) * 100;
-            if (misprediction_rate > WARN_THRESHOLD)
-                printf(ANSI_COLOR_RED "%.1lf%% misprediction" ANSI_COLOR_RESET "\n", misprediction_rate);
-            else
-                printf(ANSI_COLOR_GREEN "%.1lf%% misprediction" ANSI_COLOR_RESET "\n", misprediction_rate);
+
+            if (mode == MONITOR_MODE) 
+            {
+                if (misprediction_rate > WARN_THRESHOLD)
+                    printf(ANSI_COLOR_RED "%.1lf%% misprediction" ANSI_COLOR_RESET "\n", misprediction_rate);
+                else
+                    printf(ANSI_COLOR_GREEN "%.1lf%% misprediction" ANSI_COLOR_RESET "\n", misprediction_rate);
+            }
+            else if (mode == KILL_MODE)
+            {
+                if (misprediction_rate > WARN_THRESHOLD)
+                    printf(ANSI_COLOR_RED "AAAAAAAAAAAAAH" ANSI_COLOR_RESET "\n", misprediction_rate);
+            }
         }
 
         ioctl(fd1, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
@@ -163,13 +179,32 @@ void print_help(char* name)
     return;
 }
 
-    int main(int argc, char **argv)
+int main(int argc, char **argv)
 {
+    int mode = 0;
+
     if (argc < 3)
     {
         print_help(argv[0]);
         exit(EXIT_FAILURE);
 	}
+    if (argv[1][0] == '-')
+    {
+        switch (argv[1][1])
+        {
+        case 'm':
+            mode = MONITOR_MODE;
+            break;
+        case 'k':
+            mode = KILL_MODE;
+            break;
+        default:
+            print_help(argv[0]);
+            exit(EXIT_FAILURE);
+    } else {
+        print_help(argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
     /*Spawn a child to run the program.*/
     pid_t pid = fork();
@@ -184,6 +219,6 @@ void print_help(char* name)
     }
     else
     { /* pid!=0; parent process */
-        return trace_child(pid);
+        return trace_child(pid, mode);
     }
 }
