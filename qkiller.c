@@ -155,9 +155,9 @@ int trace_child(pid_t child)
     return 0;
 }
 
-void print_help(void)
+void print_help(char* name)
 {
-    fprintf(stderr, "Usage: %s <-m|-k> <cmd>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <-m|-k> <cmd>\n", name);
     fprintf(stderr, "-m\tmonitor mode\n");
     fprintf(stderr, "-k\tkiller mode\n");
     return;
@@ -167,7 +167,7 @@ void print_help(void)
 {
     if (argc < 3)
     {
-        print_help();
+        print_help(argv[0]);
         exit(EXIT_FAILURE);
 	}
 
