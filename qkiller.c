@@ -5,7 +5,7 @@
 #define RET_MASK 0x88
 
 #define RET_THRESHOLD 20
-#define WARN_THRESHOLD 30.0
+#define WARN_THRESHOLD 60.0
 
 const char *callname(long call);
 const char *callname32(long call);
@@ -155,12 +155,20 @@ int trace_child(pid_t child)
     return 0;
 }
 
+void print_help(void)
+{
+    fprintf(stderr, "Usage: %s <-m|-k> <cmd>\n", argv[0]);
+    fprintf(stderr, "-m\tmonitor mode\n");
+    fprintf(stderr, "-k\tkiller mode\n");
+    return;
+}
+
     int main(int argc, char **argv)
 {
-    if (argc < 2)
+    if (argc < 3)
     {
-        fprintf(stderr, "Usage: %s <cmd>\n", argv[0]);
-		exit(EXIT_FAILURE);
+        print_help();
+        exit(EXIT_FAILURE);
 	}
 
     /*Spawn a child to run the program.*/
@@ -170,7 +178,7 @@ int trace_child(pid_t child)
         extern char **environ;
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
         kill(getpid(), SIGSTOP);
-        execve(argv[1], &argv[1], environ);
+        execve(argv[2], &argv[2], environ);
         fprintf(stderr, "Execv failed: %s\n", strerror(errno));
         exit(127); /* only if execv fails */
     }
