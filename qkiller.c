@@ -157,6 +157,11 @@ int trace_child(pid_t child, int mode)
                 {
                     if(kill(child, SIGKILL) <0)
                         perror(ANSI_COLOR_RED "Unable to terminate traced program" ANSI_COLOR_RESET);
+                    else
+                    {
+                        printf(ANSI_COLOR_RED "Terminated due to ROP attack, confidence: %.1lf%%" ANSI_COLOR_RESET "\n", misprediction_rate);
+                        exit(0);
+                    }
                 }
             }
         }
