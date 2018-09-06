@@ -154,7 +154,10 @@ int trace_child(pid_t child, int mode)
             else if (mode == KILL_MODE)
             {
                 if (misprediction_rate > WARN_THRESHOLD)
-                    printf(ANSI_COLOR_RED "AAAAAAAAAAAAAH" ANSI_COLOR_RESET "\n");
+                {
+                    if(kill(child, SIGKILL) <0)
+                        perror(ANSI_COLOR_RED "Unable to terminate traced program" ANSI_COLOR_RESET);
+                }
             }
         }
 

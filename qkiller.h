@@ -15,6 +15,7 @@
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 #include <syscall.h>
+#include <signal.h>
 
 #define PACK_RAW(event_num, umask_value) ((umask_value << 0x8) + event_num)
 
