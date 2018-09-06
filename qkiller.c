@@ -154,7 +154,7 @@ int trace_child(pid_t child, int mode)
             else if (mode == KILL_MODE)
             {
                 if (misprediction_rate > WARN_THRESHOLD)
-                    printf(ANSI_COLOR_RED "AAAAAAAAAAAAAH" ANSI_COLOR_RESET "\n", misprediction_rate);
+                    printf(ANSI_COLOR_RED "AAAAAAAAAAAAAH" ANSI_COLOR_RESET "\n");
             }
         }
 
@@ -201,6 +201,7 @@ int main(int argc, char **argv)
         default:
             print_help(argv[0]);
             exit(EXIT_FAILURE);
+        }
     } else {
         print_help(argv[0]);
         exit(EXIT_FAILURE);
