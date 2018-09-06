@@ -167,9 +167,9 @@ int trace_child(pid_t child)
         ptrace(PTRACE_GETREGSET, child, NT_PRSTATUS, &x86_io);
         if (x86_io.iov_len == sizeof(struct i386_user_regs_struct)) {
             // this is a 32-bit process
-            fprintf(stderr, ANSI_COLOR_BLUE "%s()" ANSI_COLOR_RESET "\n", callname32(regs.orig_eax));
+            fprintf(stderr, ANSI_COLOR_BLUE "%s()" ANSI_COLOR_RESET "\n", callname32(regs.i386_r.orig_eax));
         } else {
-            fprintf(stderr, ANSI_COLOR_CYAN "%s()" ANSI_COLOR_RESET "\n", callname(regs.orig_rax));
+            fprintf(stderr, ANSI_COLOR_CYAN "%s()" ANSI_COLOR_RESET "\n", callname(regs.x86_64_r.orig_rax));
         }
 
         ioctl(fd1, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
