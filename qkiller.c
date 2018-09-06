@@ -159,10 +159,10 @@ int trace_child(pid_t child)
             struct user_regs_struct x86_64_r;
             struct i386_user_regs_struct i386_r;
         } regs;
-        struct iovec {
+        struct iovec x86_io = {
             .iov_base = &regs,
             .iov_len = sizeof(regs)
-        } x86_io;
+        };
         //ptrace(PTRACE_GETREGS, child, NULL, &regs);
         ptrace(PTRACE_GETREGSET, child, NT_PRSTATUS, &x86_io);
         if (x86_io.iov_len == sizeof(struct i386_user_regs_struct)) {
