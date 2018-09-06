@@ -10,6 +10,7 @@
 #include <sys/wait.h>  /* for wait */
 #include <sys/ptrace.h>
 #include <sys/user.h>
+#include <sys/uio.h>
 #include <elf.h>
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
