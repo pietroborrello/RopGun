@@ -8,7 +8,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h> /* for pid_t */
 #include <sys/wait.h>  /* for wait */
-#include <sys/ptrace.h>
+#include <linux/ptrace.h>
 #include <sys/user.h>
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
