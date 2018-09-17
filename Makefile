@@ -1,5 +1,5 @@
 all:
-	gcc -O3 qkiller.c syscallnames.c -o qkiller -pthread
+	gcc -O3 ropgun.c syscallnames.c -o ropgun -pthread
 
 clean:
-	-rm qkiller
+	-rm ropgun
