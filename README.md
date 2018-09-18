@@ -1,6 +1,6 @@
 # RopGun
 
-RopGun implements a transparent ROP mitigation technique based on runtime detection of abnormal control transfers using hardware performance counters found on commodity processors.
+RopGun is a Linux implementation of a transparent ROP mitigation technique based on runtime detection of abnormal control transfers using hardware performance counters found on commodity processors.
 
 It exploits the fact that ROP payloads expose an abnormal behavior with respect to hardware predictors. In fact at runtime the return instructions of ROP code is deeply different from legitimate return instructions of the actual program, which are always paired with call instructions.
 
@@ -50,3 +50,5 @@ To simply monitor performance counter efficacy on a particular binary
 $ ropgun -k [process]
 ```
 To kill the process if mis-prediction ratio suggests ROP payloads executing
+
+Pleace notice that the process being run should be an ELF executable file, and you should provide the full or relative path to it.
