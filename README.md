@@ -63,3 +63,12 @@ The proposed attack involves placing the payload on the stack which aims to exec
 
 ![alt text](./ropgun_report/exploit.png "")
 
+While monitoring the process with RopGun clearly evidences in the log the moment of the attack:
+
+![alt text](./ropgun_report/monitor.png "")
+
+Our tool succeeds to block the attack while running in Killer Mode:
+
+![alt text](./ropgun_report/killer.png "")
+
+
