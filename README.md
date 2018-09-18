@@ -18,7 +18,7 @@ Inspired by the work of:
 
 The tool works thanks to the access to hardware performance counters, it inspects events related to return that are retired, and return that are mis-predicted. Since such events are CPU specific the tool must be set up changing default values in the main source before using it.
 
-This are the default values for intel 2^nd generation CPUs. You should see the Chapter 19 of the Intel manual [here]( https://software.intel.com/sites/default/files/managed/a4/60/325384-sdm-vol-3abcd.pdf) to set yours.
+This are the default values for intel 2^nd generation CPUs. You should see the Chapter 19 of the Intel Manual Volume 3 [here]( https://software.intel.com/sites/default/files/managed/a4/60/325384-sdm-vol-3abcd.pdf) to set yours.
 
 ```c
 #define RETIRED_BRANCES 0x88 // <- RAW EVENT NUM
