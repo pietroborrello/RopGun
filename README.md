@@ -52,3 +52,14 @@ $ ropgun -k [process]
 To kill the process if mis-prediction ratio suggests ROP payloads executing
 
 Pleace notice that the process being run should be an ELF executable file, and you should provide the full or relative path to it.
+
+## Example
+
+As a case study we provide an example of a blocked ROP attack. 
+
+We use CrashMail II, a mail client whose 1.6 version is vulnerable to a stack based buffer overflow while changing the setting configurations, which can result in a successful ROP attack.
+
+The proposed attack involves placing the payload on the stack which aims to execute execve("/bin/sh", {}, {})
+
+![alt text](ropgun\ report/exploit.png "")
+
