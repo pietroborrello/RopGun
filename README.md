@@ -61,5 +61,5 @@ We use CrashMail II, a mail client whose 1.6 version is vulnerable to a stack ba
 
 The proposed attack involves placing the payload on the stack which aims to execute execve("/bin/sh", {}, {})
 
-![alt text](ropgun\ report/exploit.png "")
+![alt text]("./ropgun report/exploit.png", "")
 
